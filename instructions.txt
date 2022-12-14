@@ -1,0 +1,50 @@
+Matopeli ohj2 TUNI syksy 2022.
+Antti Hakkarainen K79735 antti.i.hakkarainen@tuni.fi
+
+Kontrollit: WASD
+Valikko/pause: ESC
+
+Mato liikkuu oletuksena oikealle pelin alettua. Suuntaa voi
+vaihtaa vain kerran "tickin" eli pelinopeuden (esim. 100ms) aikana. 
+Peli päättyy, kun mato törmää.
+
+Voittokonditiona on kovakoodattu game_board.cpp:ssä: width_ + height_
+Eli peliruudukon leveys ja korkeus ruutuina yhteenlaaskettuna. En tiedä
+mikä olisi hyvä, joten arvoin vain jotain sinne. Enemmällä testaamisella
+varmaan voisi löytää pelillisesti mielekkään asetuksen.
+
+Valikosta valitaan asetukset, jonka jälkeen peliä pelataan.
+Asetusten vaihtaminen vaikuttaa vain uusiin peleihin, ei meneillään olevaan
+peliin.
+
+Softan toiminnasta:
+
+Main.cpp käynnistää softan.
+Main_window näyttää pelin valikon.
+Game_board pyörittää pelilogiikkaa ja piirtää graphicssceneen peligrafiikat
+Square_itemeien avulla. Update_cell metodia kutsumalla päivitetään
+peliruudun näkymää. Tämä on Qt Creatorin Chip-esimerkin mukaisesti tehty, eli
+QGraphicsItemejä piirretään QGraphicsSceneen.
+
+Parametrit kuten graffat on/off jne. siirtyvät main_windowista eteenpäin
+aliluokille tarpeen mukaan.
+
+Lisäominaisuuksista, jotka on jollain tasolla toteutettu:
+
+1. Peliruudukon kokoa voi säätää käyttöliittymän kautta. (10 p.)
+3. Madon eri osilla on eri värit (liukuvasti). (20 p.)
+4. Ruoka sekä madon osia on esitetty kuvina tai ikoneina. (20 p.)
+5. Lisänä edelliseen lisäominaisuuteen: Käyttäjällä on mahdollisuus ennen
+    pelin aloittamista valita, haluaako hän käyttää perinteistä vai kuvallista
+    pelilautaa. (10 p.)
+10. Käyttöliittymän taustaväri vaihtuu, kun pelaaja voittaa tai häviää
+    (voitosta taustaväri muuttuu esim. vihreäksi ja häviöstä punaiseksi).
+    Uudelleenaloituksessa (reset) taustaväri palautuu ennalleen. (10 p.)
+11. Pelissä on pause-nappula, jolla ajanoton saa pysäytettyä, kun peli on
+    käynnissä. Tällöin peli lakkaa esim. vastaamasta näppäinkomentoihin.
+    Käyttäjälle ilmoitetaan jotenkin, että pause on meneillään. (10 p.)
+15. Ohjelmassa on erillinen ikkuna, jossa määritellään asetukset (esim.
+    siemenluku, pelilaudan koko, pelinopeus jne.) (15 p.)
+17. Käyttäjä voi valita madon nopeuden. (5 p.)
+
+yht. 100p.
