@@ -12,7 +12,6 @@ by the course. I implemented only the input and drawing methods.
 */
 
 #include "game_board.h"
-#include "square_item.h"
 
 Game_board::Game_board(QMainWindow *parent,
                        int width,
@@ -22,15 +21,17 @@ Game_board::Game_board(QMainWindow *parent,
                        bool graphics_mode):
     QMainWindow(parent, Qt::Window)
 {
+    this->game_speed = game_speed;
     graphics_mode_ = graphics_mode;
     width_ = width;
     height_ = height;
     rng_.seed(seed_value);
 
+    // set game board's bg color
+    this->setStyleSheet("background-color: rgb(40,40,40);");
 
     // Create a new scene so we can render graphics to it
-    scene = new QGraphicsScene(this);
-    this->populate_scene();
+    scene = new QGraphicsScene(this);    
 
     // Add scene to view, so we can see the scene
     view = new QGraphicsView(scene);
@@ -40,18 +41,18 @@ Game_board::Game_board(QMainWindow *parent,
     view->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
     this->setCentralWidget(view);
 
-    // create snake    
-    const Point head((width_ - 1) / 2, (height_ - 1) / 2);
-    snake_.push_back(head);
-
-    // put food somewhere
-    move_food();
+    this->populate_scene();
 
     // start the game timer
     timer_ = new QTimer(this);
+    anim_timer = new QTimer(this);
     timer_->start(game_speed);
+    anim_timer->start(game_speed/GFX_FPS);
+
     connect(timer_, &QTimer::timeout,
-            this, &Game_board::snake_handler);
+            this, &Game_board::anim_snake_handler);
+
+    connect(anim_timer, &QTimer::timeout, scene, &QGraphicsScene::advance);
 
     // hide the main menu when game starts
     parentWidget()->hide();
@@ -68,13 +69,20 @@ Game_board::~Game_board()
 void Game_board::stop_timer()
 {
     timer_->stop();
+    anim_timer->stop();
+    this->hide();
     parentWidget()->show();
+
+
+
 }
 
 void Game_board::start_timer()
 {
     timer_->start();
+    anim_timer->start();
     parentWidget()->hide();
+    this->show();
 }
 
 
@@ -113,11 +121,83 @@ void Game_board::snake_handler() {
         this->update_item_at_scene(snake_.at(i).pos_y(),
                           snake_.at(i).pos_x(),
                           bodypart,
-                          snake_colors.at(i%11)
+                          SNAKE_COLORS.at(i%11)
                          );
     }
 
     prev_tail_ = tail();
+
+    move_snake(dir_);
+    dir_changed = false;
+}
+
+void Game_board::anim_snake_handler()
+{
+    if (dead_) {
+        timer_->stop();
+        anim_timer->stop();
+
+        emit game_lost_signal();
+
+        parentWidget()->show();
+        this->close();
+
+        return;
+    }
+
+    // add more snake parts if needed
+    if ((int)snake_.size() > (int)gfx_snake_items.size()) {
+        // add tail first
+        if (snake_.size() == 2) {
+            Point cur_tail = tail();
+            this->add_snake_item_to_scene(
+                cur_tail.pos_y(),
+                cur_tail.pos_x(),
+                TAIL,
+                graphics_mode_,
+                DEFAULT_TILE_COLOR,
+                (GAME_SQUARE_WIDTH/GFX_FPS));
+        } else {
+            Point new_body = snake_.at(snake_.size()-1);
+            this->add_snake_item_to_scene(
+                new_body.pos_y(),
+                new_body.pos_x(),
+                BODY,
+                graphics_mode_,
+                DEFAULT_TILE_COLOR,
+                (GAME_SQUARE_WIDTH/GFX_FPS));
+        }
+    }
+
+    // decide angle of the snake
+    qreal angle = 0;
+    switch (dir_) {
+    case UP:
+        angle = 180;
+        break;
+    case DOWN:
+        angle = 0;
+        break;
+    case LEFT:
+        angle = 90;
+        break;
+    case RIGHT:
+        angle = 270;
+        break;
+    default:
+        break;
+    }
+
+    Point cur_head = head();
+    qreal prev_angle = angle;
+    // qInfo() << angle;
+    for (int i = 0; i < gfx_snake_items.size(); i++) {
+        this->update_snake_item(i,
+                                BODY,
+                                snake_00,
+                                i == 0 ? angle : prev_angle);
+        prev_angle = gfx_snake_items.at(i)->angle();
+    }
 
     move_snake(dir_);
     dir_changed = false;
@@ -164,7 +244,7 @@ void Game_board::populate_scene()
     // draw walls around the game area
     for (int y = 0; y < height_; y++) {
         for (int x = 0; x < width_; x++) {
-            QString letter = EMPTY;
+            QString letter = "";
 
             if (x == 0 and y == height_-1) {
                 letter = CORNER_SW;
@@ -187,39 +267,88 @@ void Game_board::populate_scene()
                 letter = VER_WALL;
             }
 
-            this->add_item_to_scene(y, x, letter, DEFAULT_TILE_COLOR);
+            if (letter != "") {
+                this->add_block_item_to_scene(y, x, letter, DEFAULT_TILE_COLOR);
+            }
 
         }
     }
+
+    // create snake
+    const Point head((width_ - 1) / 2, (height_ - 1) / 2);
+    snake_.push_back(head);
+
+    // put food somewhere
+    move_food();
+
+    // add a snake's head
+    this->add_snake_item_to_scene(
+        snake_.at(0).pos_y(),
+        snake_.at(0).pos_x(),
+        HEAD,
+        graphics_mode_,
+        DEFAULT_TILE_COLOR,
+        (GAME_SQUARE_WIDTH/GFX_FPS));
 }
 
-void Game_board::add_item_to_scene(int y, int x,
-                                   QString letter,
-                                   QColor tile_color)
-{
-    Square_item *item = new Square_item(scene,
-                                        y*GAME_SQUARE_HEIGHT,
-                                        x*GAME_SQUARE_WIDTH,
-                                        letter,
-                                        graphics_mode_,
-                                        tile_color);
+void Game_board::add_block_item_to_scene(
+    int y,
+    int x,
+    QString letter,
+    QColor tile_color
+) {
+    Block_item *item = new Block_item(
+        scene,
+        y*GAME_SQUARE_HEIGHT,
+        x*GAME_SQUARE_WIDTH,
+        letter,
+        graphics_mode_,
+        tile_color);
 
     item->setPos(QPointF(x*GAME_SQUARE_WIDTH, y*GAME_SQUARE_HEIGHT));
+
+    // save if food
+    if (letter == FOOD) {
+        gfx_food_item = item;
+    }
     scene->addItem(item);
 }
 
-void Game_board::update_item_at_scene(int y, int x,
-                                      QString letter,
-                                      QColor tile_color)
-{
+void Game_board::add_snake_item_to_scene(
+    int y,
+    int x,
+    QString letter,
+    bool graphics_mode,
+    QColor tile_color,
+    qreal snake_speed
+) {
+    Snake_item *item = new Snake_item(
+        scene,
+        y*GAME_SQUARE_HEIGHT,
+        x*GAME_SQUARE_WIDTH,
+        letter,
+        graphics_mode,
+        tile_color,
+        snake_speed);
+    item->setPos(QPointF(x*GAME_SQUARE_WIDTH, y*GAME_SQUARE_HEIGHT));
+    gfx_snake_items.append(item);
+    scene->addItem(item);
+}
+
+void Game_board::update_item_at_scene(
+    int y,
+    int x,
+    QString letter,
+    QColor tile_color
+) {
     // look for an item at point
-    auto *item = scene->itemAt(QPointF(x*GAME_SQUARE_WIDTH,
-                                       y*GAME_SQUARE_HEIGHT),
+    auto *item = scene->itemAt(QPointF(x*GAME_SQUARE_WIDTH+16,
+                                       y*GAME_SQUARE_HEIGHT+16),
                                        QTransform());
 
     // change item's properties and redraw item's portion of the scene
     if (item != nullptr) {
-        Square_item *as_item = dynamic_cast<Square_item*>(item);
+        Block_item *as_item = dynamic_cast<Block_item*>(item);
         as_item->set_properties(y, x, letter, tile_color);
         scene->update(x*GAME_SQUARE_WIDTH,
                       y*GAME_SQUARE_HEIGHT,
@@ -227,12 +356,30 @@ void Game_board::update_item_at_scene(int y, int x,
                       GAME_SQUARE_HEIGHT);
         return;
     }
-    qInfo() << "itemAt returned nullptr! :-(";
+    qInfo() << "OTHER: itemAt returned nullptr! :-(";
+}
+
+void Game_board::update_snake_item(
+    int position,
+    QString letter,
+    QColor tile_color,
+    qreal angle
+) {
+    // look for an item at point
+    auto * item = gfx_snake_items.at(position);
+
+    // change item's properties and redraw item's portion of the scene
+    if (item != nullptr) {
+        //Snake_item *as_item = dynamic_cast<Snake_item*>(item);
+        item->set_angle(angle);
+        return;
+    }
+    qInfo() << "SNAKE: itemAt returned nullptr! :-(";
+    //qInfo() << y << " " << x ;
 }
 
 void Game_board::new_food() {
     move_food();
-    this->update_item_at_scene(food_.pos_y(), food_.pos_x(), FOOD);
 }
 
 bool Game_board::game_over() const
@@ -284,10 +431,11 @@ bool Game_board::move_snake(const char& direction)
 
 void Game_board::move_food()
 {
-    // Moving food out of sight when it's no longer needed
-    if (game_won()) {
-        food_.setPosition(-1, -1);
-        return;
+    if (game_over()) { return; }
+
+    // remove old food if it exists
+    if (gfx_food_item != nullptr) {
+        scene->removeItem(gfx_food_item);
     }
 
     // Keeping to try random points until an empty square is found
@@ -300,7 +448,7 @@ void Game_board::move_food()
         food_.setPosition(width_dist(rng_), height_dist(rng_));
         if (not is_snake_point(food_)) {
             // Snakeless point found, stop moving the food around and render it
-            update_item_at_scene(food_.pos_y(), food_.pos_x(),
+            add_block_item_to_scene(food_.pos_y(), food_.pos_x(),
                         FOOD, DEFAULT_TILE_COLOR);
             return;
         }

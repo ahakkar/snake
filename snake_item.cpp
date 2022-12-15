@@ -2,21 +2,29 @@
 COMP.CS.110 Programming 2: Autumn 2022
 Project4: Snake
 Antti Hakkarainen K79735 antti.i.hakkarainen@tuni.fi
-File: square_item.cpp
+File: block_item.cpp
 Description:
 
 Class is used to draw the game tiles.
 */
 
-#include "square_item.h"
+#include "snake_item.h"
 #include <QDebug>
 
-Square_item::Square_item(QGraphicsScene *parent, int y, int x, QString letter,
-                         bool graphics_mode,
-                         QColor tile_color) :
+Snake_item::Snake_item(QGraphicsScene *parent,
+                       int y,
+                       int x,
+                       QString letter,
+                       bool graphics_mode,
+                       QColor tile_color,
+                       qreal speed) :
     //QGraphicsScene(parent),
     missing(QPixmap(QLatin1String(":/img/missing.png")))
 {
+    // set initial angle as default angle
+    setRotation(angle_);
+
+    // set other params
     this->parent = parent;
     this->x = x;
     this->y = y;
@@ -24,14 +32,15 @@ Square_item::Square_item(QGraphicsScene *parent, int y, int x, QString letter,
     letter_ = letter;
     graphics_mode_ = graphics_mode;
     tile_color_ = tile_color;
+    this->speed = speed;
 }
 
-QRectF Square_item::boundingRect() const
-{    
+QRectF Snake_item::boundingRect() const
+{
     return QRectF(0, 0, GAME_SQUARE_WIDTH, GAME_SQUARE_HEIGHT);
 }
 
-void Square_item::paint(QPainter *painter,
+void Snake_item::paint(QPainter *painter,
                         const QStyleOptionGraphicsItem *option,
                         QWidget *widget)
 {
@@ -58,6 +67,7 @@ void Square_item::paint(QPainter *painter,
             if (iter != GFX_TILES.end())
             {
                 colorized.fill(tile_color_);
+                tile = tile.scaled(QSize(GAME_SQUARE_WIDTH, GAME_SQUARE_HEIGHT));
                 colorized.setMask(tile.createMaskFromColor(Qt::transparent));
                 painter->drawPixmap(pos, colorized);
 
@@ -65,7 +75,7 @@ void Square_item::paint(QPainter *painter,
             // didn't find letter?
             else {
                 painter->drawPixmap(pos, missing);
-            }        
+            }
         }
         // otherwise just paint the provided letter
         else {
@@ -75,10 +85,27 @@ void Square_item::paint(QPainter *painter,
     }
 }
 
-void Square_item::set_properties(int y, int x, QString letter, QColor tile_color)
+void Snake_item::set_properties(int y, int x, QString letter, QColor tile_color)
 {
     this->y = y;
     this->x = x;
     this->letter_ = letter;
     this->tile_color_ = tile_color;
+}
+
+void Snake_item::set_angle(qreal angle)
+{
+    this->angle_ = angle;
+    setRotation(angle_);
+}
+
+qreal Snake_item::angle()
+{
+    return this->angle_;
+}
+
+void Snake_item::advance(int step)
+{
+    if (!step) { return; }
+    setPos(mapToParent(0, speed));
 }

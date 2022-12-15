@@ -27,6 +27,8 @@ int game_speed          game speed in ms
 
 #include "point.h"
 #include "constants.h"
+#include "snake_item.h"
+#include "block_item.h"
 
 QT_BEGIN_NAMESPACE
 class QWidget;
@@ -57,6 +59,7 @@ private slots:
 
     // decides how snake is drawn to screen
     void snake_handler();
+    void anim_snake_handler();
 
 signals:
     // communicate pause, game won/lost to Main_window
@@ -75,13 +78,12 @@ private:
     QGraphicsScene* scene;
     QGraphicsView* view;
 
+    int game_speed;
+
     // game timer
     QTimer* timer_;
-
-    // snake colors
-    std::vector<QColor> snake_colors =
-        {snake_00, snake_01, snake_02, snake_03, snake_04, snake_05,
-         snake_06, snake_07, snake_08, snake_09, snake_10, snake_11};
+    // animation timer
+    QTimer* anim_timer;
 
     // direction snake is going. default is right (d)
     char dir_ = 'd';
@@ -92,6 +94,11 @@ private:
 
     // Points currently occupied by the snake, head being the last one.
     std::deque<Point> snake_;
+
+    // List of graphical snake objects, so we can access them later
+    QList<Snake_item*> gfx_snake_items;
+
+    Block_item *gfx_food_item = nullptr;
 
     // The food item"s position in the gameboard.
     Point food_;
@@ -116,13 +123,27 @@ private:
     void populate_scene();
 
     // add a new item to scene (wall or empty)
-    void add_item_to_scene(int y, int x, QString letter,
+    void add_block_item_to_scene(int y, int x, QString letter,
                            QColor tile_color = QColor(0,0,0));
+
+    // add a new snake item to scene (wall or empty)
+    void add_snake_item_to_scene(int y,
+                                 int x,
+                                 QString letter,
+                                 bool graphics_mode,
+                                 QColor tile_color = DEFAULT_TILE_COLOR,
+                                 qreal snake_speed = 1);
 
     // update graphicsscene at specified position, like when drawing
     // food or snake parts
     void update_item_at_scene(int y, int x, QString letter,
                               QColor tile_color = QColor(0,0,0));
+
+    void update_snake_item(
+        int position,
+        QString letter,
+        QColor tile_color = QColor(0,0,0),
+        qreal angle = DEFAULT_ANGLE);
 
     void new_food();
 

@@ -20,10 +20,15 @@ inline static constexpr int MENU_SIZE_X = 640;
 inline static constexpr int MENU_SIZE_Y = 480;
 
 // one square's size
-inline const int GAME_SQUARE_WIDTH = 16;
-inline const int GAME_SQUARE_HEIGHT = 16;
+inline const int GAME_SQUARE_WIDTH = 32;
+inline const int GAME_SQUARE_HEIGHT = 32;
+
+// default gamespeed in ms
+inline const QString DEFAULT_GAME_SPEED = QString::number(100);
 
 // # Game_board class
+
+inline const int GFX_FPS = 10;
 
 // snake rainbow colors
 inline const QColor snake_00 = QColor(255, 0, 0);
@@ -38,6 +43,11 @@ inline const QColor snake_08 = QColor(0, 0, 255);
 inline const QColor snake_09 = QColor(128, 0, 255);
 inline const QColor snake_10 = QColor(255, 0, 255);
 inline const QColor snake_11 = QColor(255, 0, 128);
+
+// snake colors
+inline const std::vector<QColor> SNAKE_COLORS =
+    {snake_00, snake_01, snake_02, snake_03, snake_04, snake_05,
+     snake_06, snake_07, snake_08, snake_09, snake_10, snake_11};
 
 inline const QColor DEFAULT_TILE_COLOR = QColor(255, 255, 255);;
 
@@ -72,7 +82,10 @@ const char LEFT = 'a';
 const char DOWN = 's';
 const char RIGHT = 'd';
 
-// # Square_item class #
+// # *_item class #
+
+// right
+inline const qreal DEFAULT_ANGLE = 270;
 
 // map of used gfx tile locations
 inline const std::map<QString, std::string> GFX_TILES = {

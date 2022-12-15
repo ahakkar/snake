@@ -239,7 +239,7 @@ void Main_window::create_main_menu()
         "max-width: 80px;"
         "color: black;"
         "margin-left: 200px;");
-    box_gamespeed->setText(QString::number(100));
+    box_gamespeed->setText(DEFAULT_GAME_SPEED);
     box_gamespeed->setInputMask("9999");
     box_gamespeed->setAlignment(Qt::AlignHCenter);
     layout->addWidget(box_gamespeed, 5, 0);

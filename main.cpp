@@ -10,6 +10,7 @@ Runs the Qt app
 
 #include "main_window.h"
 #include <QApplication>
+#include <QFile>
 
 int main(int argc, char *argv[])
 {

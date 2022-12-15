@@ -11,18 +11,20 @@ QMAKE_CFLAGS_WARN_ON = -Wall -Wextra
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += \
+    block_item.cpp \
     game_board.cpp \
     main.cpp \
     main_window.cpp \
     point.cpp \
-    square_item.cpp
+    snake_item.cpp
 
 HEADERS += \
+    block_item.h \
     constants.h \
     game_board.h \
     main_window.h \
     point.h \
-    square_item.h
+    snake_item.h
 
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
@@ -33,5 +35,6 @@ RESOURCES += \
     snake.qrc
 
 DISTFILES += \
+    README.md \
     instructions.txt
 

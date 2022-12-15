@@ -2,10 +2,10 @@
 COMP.CS.110 Programming 2: Autumn 2022
 Project4: Snake
 Antti Hakkarainen K79735 antti.i.hakkarainen@tuni.fi
-File: square_item.h
+File: block_item.h
 Description:
 
-Class is used to draw the game tiles.
+Class is used to draw the static game tiles.
 QGraphicsItem *parent   parent class
 QString letter          letter to draw
 bool graphics_mode      gfx on/off
@@ -13,8 +13,8 @@ QColor tile_color       drawn tile color
 
 */
 
-#ifndef SQUARE_ITEM_H
-#define SQUARE_ITEM_H
+#ifndef BLOCK_ITEM_H
+#define BLOCK_ITEM_H
 
 #include "constants.h"
 #include "qgraphicsscene.h"
@@ -23,7 +23,7 @@ QColor tile_color       drawn tile color
 #include <QPainter>
 #include <QGraphicsWidget>
 
-class Square_item : public QGraphicsItem, public QGraphicsScene
+class Block_item : public QGraphicsItem, public QGraphicsScene
 {
 public:
     // can use dynamic_cast to access this Square_item's properties later
@@ -31,7 +31,7 @@ public:
     enum { Type = UserType + 1 };
     int type() const override { return Type; }
 
-    Square_item(QGraphicsScene *parent, int y, int x, QString letter = "E",
+    Block_item(QGraphicsScene *parent, int y, int x, QString letter = "E",
                 bool graphics_mode = false,
                 QColor tile_color = DEFAULT_TILE_COLOR);
 
@@ -42,10 +42,13 @@ public:
 
     void set_properties(int y, int x, QString letter, QColor tile_color);
 
+    void set_angle(qreal angle);
+
 private:
     QGraphicsScene *parent;
     int y;
     int x;
+
     QColor tile_color_;
     QPixmap missing;
 
@@ -53,4 +56,4 @@ private:
     bool graphics_mode_;
 };
 
-#endif // SQUARE_ITEM_H
+#endif // BLOCK_ITEM_H
